@@ -8,13 +8,14 @@ public abstract class Employee {
 	private Date startDate;
 	private String position;
 	protected double baseSalary;
-
-	public Employee(String id, String fullName, Date startDate, String position, double baseSalary) {
+	private double overtimeSalary; // Thêm lương OT
+	public Employee(String id, String fullName, Date startDate, String position, double baseSalary, double overtimeSalary) {
 		this.id = id;
 		this.fullName = fullName;
 		this.startDate = startDate;
 		this.position = position;
 		this.baseSalary = baseSalary;
+		this.overtimeSalary = baseSalary;
 	}
 
 	// Getters và Setters
@@ -33,8 +34,14 @@ public abstract class Employee {
 	public String getPosition() {
 		return position;
 	}
-
 	public double getBaseSalary() {
 		return baseSalary;
 	}
+	public double getOvertimeSalary() {
+		return overtimeSalary;
+	}
+	public void setOvertimeSalary(double overtimeSalary) {
+		this.overtimeSalary = overtimeSalary;
+	}
+
 }

@@ -27,11 +27,12 @@
 		private JTextField idField, nameField, baseSalaryField;
 		private JTextField coefficientField, workingDaysField, bonusField; // Full-time
 		private JTextField hoursWorkedField, hourlyRateField; // Part-time
+		private JTextField startDateField;
 		private JTextField searchField; // Trường tìm kiếm theo tên
 		private JComboBox<String> employeeTypeCombo;
 		private JComboBox<String> positionCombo;
 		private JPanel dynamicPanel;
-
+		private JTextField overtimeSalaryField; // Trường nhập lương OT
 		public EmployeeGUI() {
 			setTitle("Quản lý nhân viên");
 			setSize(800, 600);
@@ -45,7 +46,9 @@
 			baseSalaryField = new JTextField();
 			employeeTypeCombo = new JComboBox<>(new String[] { "Full-time", "Part-time" });
 			positionCombo = new JComboBox<>(new String[] { "Giám đốc", "Nhân viên", "Quản lý" });
+			startDateField = new JTextField("dd/MM/yyyy"); // Định dạng ngày
 			searchField = new JTextField();
+
 
 			inputPanel.add(new JLabel("Mã NV:"));
 			inputPanel.add(idField);
@@ -53,12 +56,13 @@
 			inputPanel.add(nameField);
 			inputPanel.add(new JLabel("Chức vụ:"));
 			inputPanel.add(positionCombo);
-			inputPanel.add(new JLabel("Lương cơ bản:"));
-			inputPanel.add(baseSalaryField);
 			inputPanel.add(new JLabel("Loại NV:"));
 			inputPanel.add(employeeTypeCombo);
+			inputPanel.add(new JLabel("Ngày vào làm:"));
+			inputPanel.add(startDateField);
 			inputPanel.add(new JLabel("Tìm kiếm theo tên:"));
 			inputPanel.add(searchField);
+
 
 			// Panel động (thay đổi theo loại nhân viên)
 			dynamicPanel = new JPanel(new GridLayout(3, 2));
@@ -145,12 +149,20 @@
 				dynamicPanel.add(new JLabel("Lương giờ:"));
 				dynamicPanel.add(hourlyRateField);
 			}
+			// Thêm trường lương OT cho cả hai loại nhân viên
+			overtimeSalaryField = new JTextField();
+			dynamicPanel.add(new JLabel("Lương OT:"));
+			dynamicPanel.add(overtimeSalaryField);
 			dynamicPanel.revalidate();
 			dynamicPanel.repaint();
 		}
 
 		private void addEmployee() {
 			try {
+				String id = idField.getText().trim();
+				if (!isValidId(id)) {
+					return;
+				}
 				Employee emp = createEmployeeFromInput();
 				manager.addEmployee(emp);
 				JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!");
@@ -162,8 +174,24 @@
 			}
 		}
 
+		private boolean isValidId(String id) {
+			// Kiểm tra ID chỉ chứa số và không quá 4 chữ số
+			if (!id.matches("\\d+")) { // Chỉ chứa số
+				JOptionPane.showMessageDialog(this, "Mã nhân viên chỉ được chứa số!");
+				return false;
+			}
+			if (id.length() > 4) { // Không quá 4 chữ số
+				JOptionPane.showMessageDialog(this, "Mã nhân viên không được quá 4 chữ số!");
+				return false;
+			}
+			return true;
+		}
 		private void updateEmployee() {
 			try {
+				String id = idField.getText().trim();
+				if (!isValidId(id)) {
+					return;
+				}
 				Employee emp = createEmployeeFromInput();
 				if (manager.updateEmployee(emp.getId(), emp)) {
 					JOptionPane.showMessageDialog(this, "Sửa nhân viên thành công!");
@@ -244,37 +272,52 @@
 			String id = idField.getText().trim();
 			String name = nameField.getText().trim();
 			String position = (String) positionCombo.getSelectedItem();
-			double baseSalary = Double.parseDouble(baseSalaryField.getText().trim());
-
+			double baseSalary;
+			switch (position) {
+				case "Giám đốc":
+					baseSalary = 150000000;
+					break;
+				case "Quản lý":
+					baseSalary = 15000000;
+					break;
+				case "Nhân viên":
+					baseSalary = 10000000;
+					break;
+				default:
+					baseSalary = 0;
+			}
+			double overtimeSalary = Double.parseDouble(overtimeSalaryField.getText().trim());
 			if (position.equals("Giám đốc")) {
 				double coefficient = Double.parseDouble(coefficientField.getText().trim());
 				int workingDays = Integer.parseInt(workingDaysField.getText().trim());
 				double bonus = Double.parseDouble(bonusField.getText().trim());
-				return new FullTimeEmployee(id, name, new Date(), position, baseSalary, coefficient, workingDays, bonus);
+				return new FullTimeEmployee(id, name, new Date(), position, baseSalary, coefficient, workingDays, bonus, overtimeSalary);
 			} else {
 				if (employeeTypeCombo.getSelectedItem().equals("Full-time")) {
 					double coefficient = Double.parseDouble(coefficientField.getText().trim());
 					int workingDays = Integer.parseInt(workingDaysField.getText().trim());
 					double bonus = Double.parseDouble(bonusField.getText().trim());
 					return new FullTimeEmployee(id, name, new Date(), position, baseSalary, coefficient, workingDays,
-							bonus);
+							bonus, overtimeSalary);
 				} else { // Part-time
 					int hoursWorked = Integer.parseInt(hoursWorkedField.getText().trim());
 					double hourlyRate = Double.parseDouble(hourlyRateField.getText().trim());
-					return new PartTimeEmployee(id, name, new Date(), position, baseSalary, hoursWorked, hourlyRate);
+					return new PartTimeEmployee(id, name, new Date(), position, baseSalary, hoursWorked, hourlyRate, overtimeSalary);
 				}
+
 			}
 		}
 
 		private void clearFields() {
 			idField.setText("");
 			nameField.setText("");
-			baseSalaryField.setText("");
 			coefficientField.setText("");
 			workingDaysField.setText("");
 			bonusField.setText("");
 			hoursWorkedField.setText("");
 			hourlyRateField.setText("");
+			overtimeSalaryField.setText(""); // Xóa trường lương OT
+			startDateField.setText("dd/MM/yyyy"); // Đặt lại định dạng ngày
 			searchField.setText("");
 			positionCombo.setSelectedIndex(0);
 			employeeTypeCombo.setEnabled(true);

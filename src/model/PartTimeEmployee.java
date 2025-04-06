@@ -7,14 +7,14 @@ public class PartTimeEmployee extends Employee implements Payable {
 	private double hourlyRate; // Lương giờ
 
 	public PartTimeEmployee(String id, String fullName, Date startDate, String position, double baseSalary,
-			int hoursWorked, double hourlyRate) {
-		super(id, fullName, startDate, position, baseSalary);
+			int hoursWorked, double hourlyRate, double overtimeSalary) {
+		super(id, fullName, startDate, position, baseSalary, overtimeSalary);
 		this.hoursWorked = hoursWorked;
 		this.hourlyRate = hourlyRate;
 	}
 
 	@Override
 	public double calculateSalary() {
-		return hoursWorked * hourlyRate;
+		return hoursWorked * hourlyRate + getOvertimeSalary();
 	}
 }

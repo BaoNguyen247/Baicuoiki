@@ -8,15 +8,16 @@ public class FullTimeEmployee extends Employee implements Payable {
 	private double bonus; // Thưởng
 
 	public FullTimeEmployee(String id, String fullName, Date startDate, String position, double baseSalary,
-			double coefficient, int workingDays, double bonus) {
-		super(id, fullName, startDate, position, baseSalary);
+							double coefficient, int workingDays, double bonus, double overtimeSalary) {
+		super(id, fullName, startDate, position, baseSalary, overtimeSalary);
 		this.coefficient = coefficient;
 		this.workingDays = workingDays;
 		this.bonus = bonus;
 	}
 
+
 	@Override
 	public double calculateSalary() {
-		return baseSalary * coefficient * (workingDays / 26.0) + bonus; // 26 ngày công chuẩn
+		return baseSalary * coefficient * (workingDays / 26.0) + bonus + getOvertimeSalary();
 	}
 }
