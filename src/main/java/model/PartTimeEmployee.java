@@ -1,6 +1,7 @@
 package model;
 
 import java.util.Date;
+import org.bson.Document;
 
 public class PartTimeEmployee extends Employee implements Payable {
 	private int hoursWorked; // Số giờ làm
@@ -11,6 +12,13 @@ public class PartTimeEmployee extends Employee implements Payable {
 		super(id, fullName, startDate, position, baseSalary, overtimeSalary);
 		this.hoursWorked = hoursWorked;
 		this.hourlyRate = hourlyRate;
+	}
+
+	// Constructor from MongoDB Document
+	public PartTimeEmployee(Document doc) {
+		super(doc);
+		this.hoursWorked = doc.getInteger("hoursWorked");
+		this.hourlyRate = doc.getDouble("hourlyRate");
 	}
 
 	// Thêm getter
@@ -25,5 +33,14 @@ public class PartTimeEmployee extends Employee implements Payable {
 	@Override
 	public double calculateSalary() {
 		return hoursWorked * hourlyRate + getOvertimeSalary();
+	}
+
+	@Override
+	public Document toDocument() {
+		Document doc = super.toDocument();
+		doc.append("type", "PartTime")
+				.append("hoursWorked", this.hoursWorked)
+				.append("hourlyRate", this.hourlyRate);
+		return doc;
 	}
 }

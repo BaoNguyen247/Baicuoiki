@@ -103,7 +103,7 @@ public class EmployeeGUI extends JFrame {
 		JButton sortAscButton = new JButton("Sắp xếp lương tăng");
 		JButton sortDescButton = new JButton("Sắp xếp lương giảm");
 		JButton displayButton = new JButton("Hiển thị danh sách");
-
+		JButton backButton = new JButton("Quay lại");
 		buttonPanel.add(addButton);
 		buttonPanel.add(updateButton);
 		buttonPanel.add(deleteButton);
@@ -112,7 +112,7 @@ public class EmployeeGUI extends JFrame {
 		buttonPanel.add(sortAscButton);
 		buttonPanel.add(sortDescButton);
 		buttonPanel.add(displayButton);
-
+		buttonPanel.add(backButton);
 		// Khu vực hiển thị
 		displayArea = new JTextArea();
 		displayArea.setEditable(false);
@@ -120,7 +120,6 @@ public class EmployeeGUI extends JFrame {
 		add(inputPanel, BorderLayout.NORTH);
 		add(dynamicPanel, BorderLayout.WEST);
 		add(buttonPanel, BorderLayout.SOUTH);
-
 		// Xử lý sự kiện
 		addButton.addActionListener(e -> addEmployee());
 		updateButton.addActionListener(e -> updateEmployee());
@@ -285,17 +284,17 @@ public class EmployeeGUI extends JFrame {
 		String position = (String) positionCombo.getSelectedItem();
 		double baseSalary;
 		switch (position) {
-		case "Giám đốc":
-			baseSalary = 150000000;
-			break;
-		case "Quản lý":
-			baseSalary = 15000000;
-			break;
-		case "Nhân viên":
-			baseSalary = 10000000;
-			break;
-		default:
-			baseSalary = 0;
+			case "Giám đốc":
+				baseSalary = 150000000;
+				break;
+			case "Quản lý":
+				baseSalary = 15000000;
+				break;
+			case "Nhân viên":
+				baseSalary = 10000000;
+				break;
+			default:
+				baseSalary = 0;
 		}
 		double overtimeSalary = Double.parseDouble(overtimeSalaryField.getText().trim());
 		if (position.equals("Giám đốc")) {

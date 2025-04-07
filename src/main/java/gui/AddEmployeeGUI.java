@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.JButton;
@@ -15,20 +14,23 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import controller.EmployeeController;
 import model.Employee;
-import model.FullTimeEmployee;
-import model.PartTimeEmployee;
-import service.EmployeeManager;
+import util.ExceptionHandler;
+import exception.ValidationException;
+import exception.ApplicationException;
+import exception.DuplicateIdException;
 
 public class AddEmployeeGUI extends JFrame {
-	private EmployeeManager manager = new EmployeeManager();
-	private MenuGUI menuGUI; // Không cần thay đổi phạm vi truy cập
+	private EmployeeController controller;
+	private MenuGUI menuGUI;
 	private JTextField idField, nameField, startDateField;
 	private JComboBox<String> employeeTypeCombo;
 	private JComboBox<String> positionCombo;
 
 	public AddEmployeeGUI(MenuGUI menuGUI) {
 		this.menuGUI = menuGUI;
+		this.controller = new EmployeeController();
 
 		setTitle("Nhập thông tin nhân viên");
 		setSize(400, 350);
@@ -84,62 +86,41 @@ public class AddEmployeeGUI extends JFrame {
 			menuGUI.setVisible(true);
 		});
 
-		nextButton.addActionListener(e -> {
-			try {
-				String id = idField.getText().trim();
-				if (!isValidId(id)) {
-					return;
-				}
-				String name = nameField.getText().trim();
-				if (name.isEmpty()) {
-					JOptionPane.showMessageDialog(this, "Vui lòng nhập họ tên!");
-					return;
-				}
-				String position = (String) positionCombo.getSelectedItem();
-				String employeeType = (String) employeeTypeCombo.getSelectedItem();
-				String startDateStr = startDateField.getText().trim();
-				if (!startDateStr.matches("\\d{2}/\\d{2}/\\d{4}")) {
-					JOptionPane.showMessageDialog(this, "Ngày vào làm phải có định dạng dd/MM/yyyy!");
-					return;
-				}
-
-				// Parse ngày tháng
-				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-				Date startDate = sdf.parse(startDateStr);
-
-				// Tạo đối tượng Employee tạm thời
-				Employee tempEmployee;
-				if (employeeType.equals("Full-time")) {
-					tempEmployee = new FullTimeEmployee(id, name, startDate, position, 5000000, 0, 0, 0, 0);
-				} else {
-					tempEmployee = new PartTimeEmployee(id, name, startDate, position, 10000000, 0, 0, 0);
-				}
-
-				// Kiểm tra ID trùng lặp
-				if (manager.findEmployeeById(id) != null) {
-					JOptionPane.showMessageDialog(this, "Mã nhân viên đã tồn tại!");
-					return;
-				}
-
-				// Chuyển sang giao diện tính lương
-				setVisible(false);
-				new MainGUI(tempEmployee, manager, this).setVisible(true);
-			} catch (Exception ex) {
-				JOptionPane.showMessageDialog(this, "Vui lòng nhập dữ liệu hợp lệ! Lỗi: " + ex.getMessage());
-			}
-		});
+		nextButton.addActionListener(e -> handleNextButtonClick());
 	}
 
-	private boolean isValidId(String id) {
-		if (!id.matches("\\d+")) {
-			JOptionPane.showMessageDialog(this, "Mã nhân viên chỉ được chứa số!");
-			return false;
+	private void handleNextButtonClick() {
+		try {
+			// Validate inputs
+			String id = idField.getText().trim();
+			controller.validateEmployeeId(id);
+
+			String name = nameField.getText().trim();
+			controller.validateEmployeeName(name);
+
+			String position = (String) positionCombo.getSelectedItem();
+			String employeeType = (String) employeeTypeCombo.getSelectedItem();
+			String startDateStr = startDateField.getText().trim();
+			controller.validateStartDate(startDateStr);
+
+			// Parse date
+			Date startDate = controller.parseDate(startDateStr);
+
+			// Check if ID already exists
+			if (controller.isEmployeeIdExists(id)) {
+				throw new DuplicateIdException("Mã nhân viên đã tồn tại!");
+			}
+
+			// Create temporary employee for salary calculation
+			Employee tempEmployee = controller.createTempEmployee(
+					id, name, startDate, position, employeeType);
+
+			// Navigate to salary entry screen
+			setVisible(false);
+			new MainGUI(tempEmployee, controller.getEmployeeManager(), this).setVisible(true);
+		} catch (Exception ex) {
+			ExceptionHandler.handleException(this, ex);
 		}
-		if (id.length() > 4) {
-			JOptionPane.showMessageDialog(this, "Mã nhân viên không được quá 4 chữ số!");
-			return false;
-		}
-		return true;
 	}
 
 	// Thêm getter để truy cập menuGUI

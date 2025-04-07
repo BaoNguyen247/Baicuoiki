@@ -19,6 +19,7 @@ import javax.swing.table.DefaultTableModel;
 import model.Employee;
 import model.FullTimeEmployee;
 import service.EmployeeManager;
+import util.ExceptionHandler;
 
 public class ManageEmployeeGUI extends JFrame {
 	private EmployeeManager manager = new EmployeeManager();
@@ -113,15 +114,26 @@ public class ManageEmployeeGUI extends JFrame {
 	}
 
 	private void deleteEmployee() {
-		int selectedRow = employeeTable.getSelectedRow();
-		if (selectedRow == -1) {
-			JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhân viên để xóa!");
-			return;
+		try {
+			int selectedRow = employeeTable.getSelectedRow();
+			if (selectedRow == -1) {
+				JOptionPane.showMessageDialog(this, "Vui lòng chọn một nhân viên để xóa!");
+				return;
+			}
+			String id = (String) tableModel.getValueAt(selectedRow, 0);
+
+			// Confirm before deletion
+			int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa nhân viên này?", "Xác nhận xóa",
+					JOptionPane.YES_NO_OPTION);
+
+			if (confirm == JOptionPane.YES_OPTION) {
+				manager.removeEmployee(id);
+				JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
+				refreshTable(manager.getEmployees());
+			}
+		} catch (Exception ex) {
+			ExceptionHandler.handleException(this, ex);
 		}
-		String id = (String) tableModel.getValueAt(selectedRow, 0);
-		manager.removeEmployee(id);
-		JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
-		refreshTable(manager.getEmployees());
 	}
 
 	private void editEmployee() {
@@ -172,11 +184,14 @@ public class ManageEmployeeGUI extends JFrame {
 			}
 		}
 
-		String stats = String.format("Thống kê nhân viên:\n" + "Tổng số nhân viên: %d\n" + "Tổng lương: %.2f\n"
-				+ "Nhân viên lương cao nhất: %s (Lương: %.2f)\n" + "Nhân viên lương thấp nhất: %s (Lương: %.2f)",
-				employees.size(), totalSalary, highestPaid.getFullName(),
-				((model.Payable) highestPaid).calculateSalary(), lowestPaid.getFullName(),
-				((model.Payable) lowestPaid).calculateSalary());
+		String stats = String.format("Thống kê nhân viên:\n" + "Tổng số nhân viên: %d\n" + "Tổng lương: %s\n"
+				+ "Nhân viên lương cao nhất: %s (Lương: %s)\n" + "Nhân viên lương thấp nhất: %s (Lương: %s)",
+				employees.size(),
+				formatSalary(totalSalary),
+				highestPaid.getFullName(),
+				formatSalary(((model.Payable) highestPaid).calculateSalary()),
+				lowestPaid.getFullName(),
+				formatSalary(((model.Payable) lowestPaid).calculateSalary()));
 		JOptionPane.showMessageDialog(this, stats);
 	}
 
@@ -184,8 +199,31 @@ public class ManageEmployeeGUI extends JFrame {
 		tableModel.setRowCount(0);
 		for (Employee emp : employees) {
 			String type = (emp instanceof FullTimeEmployee) ? "Full-time" : "Part-time";
-			tableModel.addRow(new Object[] { emp.getId(), emp.getFullName(), emp.getPosition(), type,
-					((model.Payable) emp).calculateSalary() });
+			tableModel.addRow(new Object[] {
+					emp.getId(),
+					emp.getFullName(),
+					emp.getPosition(),
+					type,
+					formatSalary(((model.Payable) emp).calculateSalary())
+			});
+		}
+	}
+
+	/**
+	 * Formats a salary value with thousand separators and appropriate units
+	 * 
+	 * @param salary The salary value to format
+	 * @return The formatted salary string
+	 */
+	private String formatSalary(double salary) {
+		java.text.NumberFormat formatter = java.text.NumberFormat.getNumberInstance(new java.util.Locale("vi", "VN"));
+
+		if (salary >= 1_000_000_000) {
+			return formatter.format(salary / 1_000_000_000) + " tỉ đồng";
+		} else if (salary >= 1_000_000) {
+			return formatter.format(salary / 1_000_000) + " triệu đồng";
+		} else {
+			return formatter.format(salary / 1_000) + " ngàn đồng";
 		}
 	}
 }

@@ -13,25 +13,30 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import controller.EmployeeController;
 import exception.DuplicateIdException;
+import exception.ValidationException;
 import model.Employee;
 import model.FullTimeEmployee;
 import model.PartTimeEmployee;
 import service.EmployeeManager;
+import util.ExceptionHandler;
 
 public class MainGUI extends JFrame {
 	private EmployeeManager manager;
+	private EmployeeController controller;
 	private Employee tempEmployee;
 	private AddEmployeeGUI addEmployeeGUI;
 	private JTextField coefficientField, workingDaysField, bonusField, overtimeHoursField;
 	private JTextField hoursWorkedField, hourlyRateField;
 	private static final double OVERTIME_RATE = 50000; // Lương OT mặc định: 50,000 VNĐ/giờ
-	private JPanel dynamicPanel; // Chuyển khai báo lên cấp độ lớp
+	private JPanel dynamicPanel;
 
 	public MainGUI(Employee tempEmployee, EmployeeManager manager, AddEmployeeGUI addEmployeeGUI) {
 		this.tempEmployee = tempEmployee;
 		this.manager = manager;
 		this.addEmployeeGUI = addEmployeeGUI;
+		this.controller = new EmployeeController();
 
 		setTitle("Tính lương nhân viên");
 		setSize(600, 400);
@@ -73,7 +78,15 @@ public class MainGUI extends JFrame {
 		// Xử lý sự kiện
 		backButton.addActionListener(e -> {
 			setVisible(false);
-			addEmployeeGUI.setVisible(true);
+			if (addEmployeeGUI != null) {
+				addEmployeeGUI.setVisible(true);
+			} else {
+				// If we don't have a reference to the AddEmployeeGUI, go back to menu
+				// This happens when MainGUI is opened from SelectEmployeeGUI
+				if (tempEmployee != null) {
+					new MenuGUI().setVisible(true);
+				}
+			}
 		});
 
 		saveButton.addActionListener(e -> saveEmployee());
@@ -85,14 +98,14 @@ public class MainGUI extends JFrame {
 			String position = tempEmployee.getPosition();
 			double coefficient;
 			switch (position) {
-			case "Giám đốc":
-				coefficient = 3;
-				break;
-			case "Quản lý":
-				coefficient = 2;
-				break;
-			default:
-				coefficient = 1;
+				case "Giám đốc":
+					coefficient = 3;
+					break;
+				case "Quản lý":
+					coefficient = 2;
+					break;
+				default:
+					coefficient = 1;
 			}
 			coefficientField.setText(String.valueOf(coefficient));
 
@@ -116,32 +129,60 @@ public class MainGUI extends JFrame {
 
 	private void saveEmployee() {
 		try {
+			// Validate inputs first
+			if (tempEmployee instanceof FullTimeEmployee) {
+				controller.validateNumericInput(coefficientField.getText().trim(), "Hệ số lương");
+				controller.validateIntegerInput(workingDaysField.getText().trim(), "Ngày công");
+				controller.validateNumericInput(bonusField.getText().trim(), "Thưởng");
+				controller.validateNumericInput(overtimeHoursField.getText().trim(), "Giờ OT");
+			} else {
+				controller.validateIntegerInput(hoursWorkedField.getText().trim(), "Số giờ làm");
+				controller.validateNumericInput(hourlyRateField.getText().trim(), "Lương giờ");
+			}
+
 			Employee employee;
 			if (tempEmployee instanceof FullTimeEmployee) {
 				double coefficient = Double.parseDouble(coefficientField.getText().trim());
 				int workingDays = Integer.parseInt(workingDaysField.getText().trim());
 				double bonus = Double.parseDouble(bonusField.getText().trim());
 				double overtimeHours = Double.parseDouble(overtimeHoursField.getText().trim());
-				double overtimeSalary = overtimeHours * OVERTIME_RATE;
-				employee = new FullTimeEmployee(tempEmployee.getId(), tempEmployee.getFullName(),
-						tempEmployee.getStartDate(), tempEmployee.getPosition(), 5000000, coefficient, workingDays,
-						bonus, overtimeSalary);
+
+				employee = controller.createFullTimeEmployee(
+						tempEmployee.getId(),
+						tempEmployee.getFullName(),
+						tempEmployee.getStartDate(),
+						tempEmployee.getPosition(),
+						coefficient,
+						workingDays,
+						bonus,
+						overtimeHours);
 			} else {
 				int hoursWorked = Integer.parseInt(hoursWorkedField.getText().trim());
 				double hourlyRate = Double.parseDouble(hourlyRateField.getText().trim());
-				employee = new PartTimeEmployee(tempEmployee.getId(), tempEmployee.getFullName(),
-						tempEmployee.getStartDate(), tempEmployee.getPosition(), tempEmployee.getBaseSalary(),
-						hoursWorked, hourlyRate, 0);
+				double overtimeSalary = 0;
+
+				employee = controller.createPartTimeEmployee(
+						tempEmployee.getId(),
+						tempEmployee.getFullName(),
+						tempEmployee.getStartDate(),
+						tempEmployee.getPosition(),
+						hoursWorked,
+						hourlyRate,
+						overtimeSalary);
 			}
-			manager.addEmployee(employee);
+
+			controller.addEmployee(employee);
 			JOptionPane.showMessageDialog(this, "Lưu nhân viên thành công!");
 			clearFields();
 			setVisible(false);
-			addEmployeeGUI.getMenuGUI().setVisible(true); // Sử dụng getter để truy cập menuGUI
-		} catch (DuplicateIdException ex) {
-			JOptionPane.showMessageDialog(this, "Mã nhân viên đã tồn tại!");
-		} catch (NumberFormatException ex) {
-			JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ!");
+			if (addEmployeeGUI != null) {
+				addEmployeeGUI.getMenuGUI().setVisible(true);
+			} else {
+				// If we don't have a reference to the AddEmployeeGUI, create a new MenuGUI
+				new MenuGUI().setVisible(true);
+			}
+		} catch (Exception ex) {
+			ExceptionHandler.handleException(this, ex);
 		}
 	}
 
