@@ -44,6 +44,7 @@ public class LoginGUI extends JFrame {
 		add(usernameField);
 		add(passwordLabel);
 		add(passwordField);
+		add(dbLabel);
 		add(connectionStatusLabel);
 		add(new JLabel());
 		add(loginButton);
