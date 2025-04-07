@@ -1,8 +1,6 @@
 package service;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.bson.Document;
@@ -29,7 +27,7 @@ public class EmployeeManager {
 		if (findEmployeeById(emp.getId()) != null) {
 			throw new DuplicateIdException("Mã nhân viên đã tồn tại!");
 		}
-		Document doc = employeeToDocument(emp);
+		Document doc = emp.toDocument();
 		employeeCollection.insertOne(doc);
 	}
 
@@ -66,7 +64,7 @@ public class EmployeeManager {
 		if (!updatedEmployee.getId().equals(id) && findEmployeeById(updatedEmployee.getId()) != null) {
 			throw new DuplicateIdException("Mã nhân viên mới đã tồn tại!");
 		}
-		Document doc = employeeToDocument(updatedEmployee);
+		Document doc = updatedEmployee.toDocument();
 		employeeCollection.replaceOne(Filters.eq("id", id), doc);
 		return true;
 	}
@@ -96,53 +94,13 @@ public class EmployeeManager {
 		return results;
 	}
 
-	private Document employeeToDocument(Employee emp) {
-		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-		Document doc = new Document("id", emp.getId()).append("fullName", emp.getFullName())
-				.append("startDate", sdf.format(emp.getStartDate())).append("position", emp.getPosition())
-				.append("baseSalary", emp.getBaseSalary()).append("overtimeSalary", emp.getOvertimeSalary())
-				.append("salary", ((model.Payable) emp).calculateSalary());
-
-		if (emp instanceof FullTimeEmployee) {
-			FullTimeEmployee ft = (FullTimeEmployee) emp;
-			doc.append("type", "FullTime").append("coefficient", ft.getCoefficient())
-					.append("workingDays", ft.getWorkingDays()).append("bonus", ft.getBonus())
-					.append("overtimeHours", ft.getOvertimeSalary() / 50000);
-		} else if (emp instanceof PartTimeEmployee) {
-			PartTimeEmployee pt = (PartTimeEmployee) emp;
-			doc.append("type", "PartTime").append("hoursWorked", pt.getHoursWorked()).append("hourlyRate",
-					pt.getHourlyRate());
-		}
-		return doc;
-	}
-
 	private Employee documentToEmployee(Document doc) {
-		String id = doc.getString("id");
-		String fullName = doc.getString("fullName");
-		String position = doc.getString("position");
-		double baseSalary = doc.getDouble("baseSalary").doubleValue();
-		double overtimeSalary = doc.getDouble("overtimeSalary").doubleValue();
 		String type = doc.getString("type");
 
-		Date startDate;
-		try {
-			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-			startDate = sdf.parse(doc.getString("startDate"));
-		} catch (Exception e) {
-			startDate = new Date();
-		}
-
 		if ("FullTime".equals(type)) {
-			double coefficient = doc.getDouble("coefficient").doubleValue();
-			int workingDays = doc.getInteger("workingDays");
-			double bonus = doc.getDouble("bonus").doubleValue();
-			return new FullTimeEmployee(id, fullName, startDate, position, baseSalary, coefficient, workingDays, bonus,
-					overtimeSalary);
+			return new FullTimeEmployee(doc);
 		} else {
-			int hoursWorked = doc.getInteger("hoursWorked");
-			double hourlyRate = doc.getDouble("hourlyRate").doubleValue();
-			return new PartTimeEmployee(id, fullName, startDate, position, baseSalary, hoursWorked, hourlyRate,
-					overtimeSalary);
+			return new PartTimeEmployee(doc);
 		}
 	}
 }

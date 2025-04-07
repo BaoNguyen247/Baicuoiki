@@ -12,14 +12,15 @@ import javax.swing.JTextField;
 import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
 
-import model.Admin;
 import service.MongoDBConnection;
+import service.AdminService;
+import service.ServiceLocator;
 
 public class LoginGUI extends JFrame {
 	private JTextField usernameField;
 	private JPasswordField passwordField;
-	private final Admin admin = new Admin("admin", "123456");
 	private JLabel connectionStatusLabel;
+	private AdminService adminService;
 
 	public LoginGUI() {
 		setTitle("Đăng nhập quản trị viên");
@@ -43,7 +44,6 @@ public class LoginGUI extends JFrame {
 		add(usernameField);
 		add(passwordLabel);
 		add(passwordField);
-		add(dbLabel);
 		add(connectionStatusLabel);
 		add(new JLabel());
 		add(loginButton);
@@ -64,6 +64,10 @@ public class LoginGUI extends JFrame {
 			// Cập nhật UI trên EDT
 			javax.swing.SwingUtilities.invokeLater(() -> {
 				if (isConnected) {
+					// Initialize admin after successful connection
+					adminService = new AdminService();
+					adminService.initializeDefaultAdmin();
+
 					connectionStatusLabel.setText("Đã kết nối");
 					connectionStatusLabel.setForeground(new Color(0, 128, 0)); // Màu xanh lá
 				} else {
@@ -78,12 +82,14 @@ public class LoginGUI extends JFrame {
 		String username = usernameField.getText().trim();
 		String password = new String(passwordField.getPassword()).trim();
 
-		if (username.equals(admin.getUsername()) && password.equals(admin.getPassword())) {
+		// Use the AdminService to authenticate against the database
+		if (adminService != null && adminService.authenticate(username, password)) {
 			JOptionPane.showMessageDialog(this, "Đăng nhập thành công!");
 			setVisible(false);
 			new MenuGUI().setVisible(true);
 		} else {
-			JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu không đúng!");
+			JOptionPane.showMessageDialog(this,
+					"Tên đăng nhập hoặc mật khẩu không đúng hoặc cơ sở dữ liệu chưa kết nối!");
 		}
 	}
 }
