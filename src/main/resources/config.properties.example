@@ -1,0 +1,3 @@
+# MongoDB Configuration
+mongodb.connection.string=
+mongodb.database.name=

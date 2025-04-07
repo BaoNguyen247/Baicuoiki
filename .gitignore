@@ -27,3 +27,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Hide build files in maven projects
+target
+**/target/
+**/config.properties
